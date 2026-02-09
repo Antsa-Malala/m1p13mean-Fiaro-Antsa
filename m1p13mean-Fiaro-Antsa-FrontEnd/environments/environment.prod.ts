@@ -1,1 +1,0 @@
-export const environment = { production: true, apiUrl: 'https://api.m1p13mean-Fiaro-Antsa.com' }; 
