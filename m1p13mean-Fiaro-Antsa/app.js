@@ -1,9 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 
-const adminRoutes = require('./routes/adminRoutes');
-const customerRoutes = require('./routes/customerRoutes');
-const shopRoutes = require('./routes/shopRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -12,9 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/admins', adminRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/shops', shopRoutes);
+app.use('/api', userRoutes);
 
 // 404
 app.use((req, res) => {
