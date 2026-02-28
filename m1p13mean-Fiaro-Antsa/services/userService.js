@@ -1,5 +1,7 @@
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const { User, Admin, Customer, Shop } = require('../models/userModel');
+const { Box } = require('../models/boxModel');
 
 const SECRET_KEY = process.env.JWT_SECRET;
 
@@ -41,7 +43,10 @@ exports.getUsersByRole = async (role) => {
     try {
         if (!role) throw new Error("Role parameter is required");
 
-        const users = await User.find({ role });
+        const users = await User.find({ 
+            role: role, 
+            status: "ACTIVE" 
+        }).populate('box');
         return users;
 
     } catch (err) {
@@ -54,7 +59,11 @@ exports.getUserById = async (id) => {
     try {
         if (!id) throw new Error("Id parameter is required to get informations");
 
-        return await User.findById(id);
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new Error("Invalid User ID");
+        }
+
+        return await User.findById(id).populate('box');
 
     } catch (err) {
         console.error("Error getting users by id:", err);
@@ -86,7 +95,7 @@ exports.deleteUser = async (id) => {
 
 exports.loginUser = async (data) => {
     try{
-        const user = await User.findOne({ email: data.email, role: data.role, status: 'ACTIVE' });
+        const user = await User.findOne({ email: data.email, role: data.role, status: 'ACTIVE' }).populate('box');
         if (!user) return null;
 
         const isValid = await user.checkPassword(data.password);
@@ -95,12 +104,54 @@ exports.loginUser = async (data) => {
         const token = jwt.sign(
             { id: user._id, email: user.email, role: user.role, name: user.name, role: user.role },
             SECRET_KEY,
-            { expiresIn: '1h' }
+            { expiresIn: '12h' }
         );
-
         return { user, token };
     } catch (err) {
         console.error("Error login user:", err);
+        throw err;
+    }
+};
+
+exports.me = async(id) =>{
+    try {
+        if (!id) throw new Error("One or many parameters are missing");
+
+        return await User.findById(id).populate('box');
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+exports.getAvailableShops = async () => {
+    try {
+        const assignedShopIds = await Box.distinct("shop", { shop: { $ne: null } });
+
+        const availableShops = await User.find({
+            role: "SHOP",
+            _id: { $nin: assignedShopIds }
+        });
+
+        return availableShops;
+
+    } catch (err) {
+        console.error("Error getting available shops:", err);
+        throw err;
+    }
+};
+
+exports.getMyBox = async (shopId) => {
+    try {
+        if (!shopId) throw new Error("Shop id parameter is required to get informations");
+
+        if (!mongoose.Types.ObjectId.isValid(shopId)) {
+            throw new Error("Invalid SHOP ID");
+        }
+
+        return await Box.findOne({ shop: shopId });
+
+    } catch (err) {
+        console.error("Error getting box by shop id:", err);
         throw err;
     }
 };
