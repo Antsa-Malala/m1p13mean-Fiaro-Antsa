@@ -18,6 +18,15 @@ exports.getUsersByRole = async (req, res) => {
     }
 };
 
+exports.getAvailableShops = async (req, res) => {
+    try {
+        const users = await userService.getAvailableShops();
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.getUser = async (req, res) => {
     try {
         const user = await userService.getUserById(req.params.id);
@@ -75,4 +84,35 @@ exports.login = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+exports.me = async (req, res) => {
+     try {
+        const user = await userService.me(req.user.id);
+        if (!user)
+        {
+            return res.status(404).json({ message: 'User not found' });
+        } 
+        res.json(user);
+    } catch (err) {
+        res.status(500).json(
+            {
+                message: err.message 
+            }
+        );
+    }
+};
+
+
+exports.getMyBox = async (req, res) => {
+    try {
+        const box = await userService.getMyBox(req.params.id);
+        res.json(box);
+    } catch (err) {
+        res.status(500).json(
+            {
+                message: err.message 
+            }
+        );
+    }
 };

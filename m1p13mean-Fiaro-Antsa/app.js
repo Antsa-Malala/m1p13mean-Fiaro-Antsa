@@ -1,7 +1,7 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-
-const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -10,7 +10,11 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api', userRoutes);
+const userRoutes = require('./routes/userRoutes');
+const boxRoutes = require('./routes/boxRoutes');
+
+app.use('/api/users', userRoutes);
+app.use('/api/boxes', boxRoutes);
 
 // 404
 app.use((req, res) => {
