@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { Shop } = require('./userModel');
 
 const boxSchema = new mongoose.Schema({
     floor: { type: Number, required: true },

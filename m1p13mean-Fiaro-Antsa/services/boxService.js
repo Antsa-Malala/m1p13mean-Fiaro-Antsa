@@ -52,6 +52,11 @@ exports.updateBox = async (id, data) => {
         if (!mongoose.Types.ObjectId.isValid(id))
             throw new Error("Invalid Box ID");
 
+        const existing = await Box.findOne({ number: data.number, floor: data.floor });
+        if (existing) {
+            throw new Error(`Box with number ${data.number} at floor ${data.floor} already exists`);
+        }
+
         const existingBox = await Box.findById(id);
         if (!existingBox) throw new Error("Box not found");
 
