@@ -1,0 +1,237 @@
+const cloudinary = require('../config/cloudinary');
+const fs = require('fs');
+const path = require('path');
+const productService = require('../services/productService');
+
+const uploadPath = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+exports.createProduct = async (req, res) => {
+    try {
+        let mainImageUrl = null;
+
+        if (req.files?.image) {
+            const file = req.files.image[0];
+
+            const result = await cloudinary.uploader.upload(file.path, {
+                folder: 'products'
+            });
+
+            mainImageUrl = result.secure_url;
+
+            fs.unlinkSync(file.path);
+        }
+    
+        const variants = JSON.parse(req.body.variants || '[]');
+
+        if (req.files?.variantImages) {
+            const variantFiles = req.files.variantImages;
+
+            for (let i = 0; i < variantFiles.length; i++) {
+                const file = variantFiles[i];
+
+                const result = await cloudinary.uploader.upload(file.path, {
+                    folder: 'products'
+                });
+
+                if (variants[i]) {
+                    variants[i].image = result.secure_url;
+                }
+
+                fs.unlinkSync(file.path);
+            }
+        }
+
+        const product = await productService.createProduct({
+            ...req.body,
+            image: mainImageUrl,
+            variants: variants
+        });
+
+        res.status(201).json(product);
+
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ error: error.message });
+    }
+};
+
+exports.getProducts = async (req, res) => {
+    try {
+        const filter = {};
+        if (req.query.shopId) 
+        {
+            filter.shop = req.query.shopId;
+        }
+        
+        if (req.query.categoryId) 
+        {
+            filter.category = req.query.categoryId;
+        }
+        
+        if (req.query.status) 
+        {
+            filter.status = req.query.status;
+        }
+
+        const products = await productService.getProducts(filter);
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ message: err.message || 'Unexpected error' });
+    }
+};
+
+exports.getProductsMinima = async (req, res) => {
+    try {
+        const filter = {};
+        if (req.query.shopId) 
+        {
+            filter.shop = req.query.shopId;
+        }
+
+        if (req.query.categoryId) 
+        {
+            filter.category = req.query.categoryId;
+        }
+        if (req.query.status) 
+        {
+            filter.status = req.query.status;
+        }
+        
+        const products = await productService.getProductsMinima(filter);
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ message: err.message || 'Unexpected error' });
+    }
+};
+
+exports.getProductById = async (req, res) => {
+    try {
+        const product = await productService.getProductById(req.params.id);
+        res.json(product);
+    } catch (err) {
+        res.status(404).json({ message: err.message || 'Product not found' });
+    }
+};
+
+exports.updateProduct = async (req, res) => {
+    try {
+
+        const existingProduct = await productService.getProductById(req.params.id);
+
+        if (!existingProduct) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        let updateData = { ...req.body };
+
+        if (req.files?.image) {
+            const file = req.files.image[0];
+
+            const result = await cloudinary.uploader.upload(file.path, {
+                folder: 'products'
+            });
+
+            updateData.image = result.secure_url;
+
+            fs.unlinkSync(file.path);
+        }
+
+        const incomingVariants = JSON.parse(req.body.variants || '[]');
+        const existingVariants = existingProduct.variants || [];
+
+        const mergedVariants = incomingVariants.map(newVariant => {
+
+            if (newVariant._id) {
+
+                const oldVariant = existingVariants.find(
+                    v => v._id.toString() === newVariant._id
+                );
+
+                return {
+                    ...newVariant,
+                    image: newVariant.image || oldVariant?.image || null
+                };
+            }
+
+            return newVariant;
+        });
+
+        if (req.files?.variantImages) {
+
+            for (let i = 0; i < req.files.variantImages.length; i++) {
+
+                const file = req.files.variantImages[i];
+
+                const result = await cloudinary.uploader.upload(file.path, {
+                    folder: 'products'
+                });
+
+                if (mergedVariants[i]) {
+                    mergedVariants[i].image = result.secure_url;
+                }
+
+                fs.unlinkSync(file.path);
+            }
+        }
+
+        updateData.variants = mergedVariants;
+
+        const updatedProduct = await productService.updateProduct(
+            req.params.id,
+            updateData,
+            req.user
+        );
+
+        res.json(updatedProduct);
+
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+exports.deleteProduct = async (req, res) => {
+    try {
+        await productService.deleteProduct(req.params.id, req.user);
+        res.json({ message: 'Product deleted successfully' });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+exports.updateVariantStock = async (req, res) => {
+    try {
+        const { productId, variantId } = req.params;
+        const { newStock } = req.body;
+        if (newStock == null) return res.status(400).json({ message: 'New stock value is required' });
+        const updatedProduct = await productService.updateVariantStock(productId, variantId, newStock, req.user);
+        res.json(updatedProduct);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+exports.getAvailableProducts = async (req, res) => {
+    try {
+        const products = await productService.getAvailableProducts(req.params?.shopId, req.params?.categoryId);
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ message: err.message || 'Unable to fetch products' });
+    }
+};
+
+exports.deleteVariant = async (req, res) => {
+    try {
+
+        const { productId, variantId } = req.params;
+
+        const updatedProduct = await productService.deleteVariant(productId, variantId);
+
+        res.json(updatedProduct);
+
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};

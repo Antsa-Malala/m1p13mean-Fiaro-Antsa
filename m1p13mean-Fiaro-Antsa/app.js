@@ -13,10 +13,12 @@ app.use(express.json());
 const userRoutes = require('./routes/userRoutes');
 const boxRoutes = require('./routes/boxRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/boxes', boxRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/products', productRoutes);
 
 // 404
 app.use((req, res) => {

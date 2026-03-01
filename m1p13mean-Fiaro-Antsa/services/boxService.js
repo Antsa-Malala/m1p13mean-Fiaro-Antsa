@@ -52,7 +52,7 @@ exports.updateBox = async (id, data) => {
         if (!mongoose.Types.ObjectId.isValid(id))
             throw new Error("Invalid Box ID");
 
-        const existing = await Box.findOne({ number: data.number, floor: data.floor });
+        const existing = await Box.findOne({ number: data.number, floor: data.floor, _id: { $ne: id } });
         if (existing) {
             throw new Error(`Box with number ${data.number} at floor ${data.floor} already exists`);
         }
@@ -67,7 +67,7 @@ exports.updateBox = async (id, data) => {
         if (data.status === "AVAILABLE" || data.status === "MAINTENANCE") {
             data.shop = null;
         }
-
+        console.log("ty zao box",data);
         return await Box.findByIdAndUpdate(id, data, { new: true });
 
     } catch (err) {
