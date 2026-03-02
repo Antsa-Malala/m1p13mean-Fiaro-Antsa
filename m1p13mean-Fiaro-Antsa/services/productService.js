@@ -3,9 +3,19 @@ const mongoose = require('mongoose');
 
 exports.createProduct = async (data) => {
     try {
-        const existing = await Product.findOne({ name: data.name, user: data.shop });
+        const existing = await Product.findOne({ name: data.name, shop: data.shop });
         if (existing) {
             throw new Error(`Product with name ${data.name} already exists in your shop`);
+        }
+
+        if (!data.variants || data.variants.length === 0) {
+            data.variants = [{
+                size: "",
+                color: "",
+                price: data.price || 0,
+                stock: data.stock || 0,
+                image: data.image || "",
+            }];
         }
 
         const product = await Product.create(data);
@@ -13,7 +23,7 @@ exports.createProduct = async (data) => {
         return product;
 
     } catch (err) {
-        console.error("Error creating product:", err);
+        console.error("Error creating product:", err.message);
         throw err;
     }
 };
