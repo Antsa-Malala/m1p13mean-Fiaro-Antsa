@@ -140,6 +140,30 @@ exports.deleteVariant = async (productId, variantId) => {
     return updatedProduct;
 };
 
+exports.getVariant = async (productId, variantId, user) => {
+    if (!Types.ObjectId.isValid(productId)) {
+        throw new Error('Invalid product id');
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+        throw new Error('Product not found');
+    }
+
+    const isAdmin = user?.role === 'ADMIN';
+
+    if (!isAdmin && (product.shop._id.toString() !== user?.id)) {
+         throw new Error('You are not allowed to update this product variant');
+    }
+
+    const variant = product.variants.id(variantId);
+    if (!variant) {
+        throw new Error('Variant not found');
+    }
+
+    return variant;
+};
+
 exports.updateVariantStock = async (productId, variantId, newStock, user) => {
     if (!Types.ObjectId.isValid(productId)) {
         throw new Error('Invalid product id');
@@ -152,7 +176,7 @@ exports.updateVariantStock = async (productId, variantId, newStock, user) => {
 
     const isAdmin = user?.role === 'ADMIN';
 
-   if (!isAdmin && (product.shop._id.toString() !== user?.id)) {
+    if (!isAdmin && (product.shop._id.toString() !== user?.id)) {
         throw new Error('You are not allowed to update this product variant');
     }
 
@@ -178,4 +202,23 @@ exports.getAvailableProducts = async (shopId, categoryId) => {
     }
 
     return await this.getProducts(filter);
+};
+
+exports.getProductsByShopId = async (shopId) => {
+    const filter = {};
+    filter.shop = shopId;
+    const result = await this.getProductsMinima(filter);
+    if(!result) {
+        throw new Error('No products for your shop');
+    }
+
+    return result;
+};
+
+exports.getVariantsByProductsId = async (productId) => {
+    const products = await Product
+                            .findById(productId)
+                            .select('variants');
+
+    return products.variants;
 };

@@ -235,3 +235,23 @@ exports.deleteVariant = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
+
+exports.addVariantStock = async (req, res) => {
+    try {
+        const { productId, variantId } = req.params;
+        const { stockToAdd } = req.body;
+        const stockToAddNumber = Number(stockToAdd);
+        if(isNaN(stockToAddNumber) || stockToAddNumber < 0 ) {
+            throw new Error('Invalid stock value');
+        }
+
+        const variant = await productService.getVariant(productId, variantId, req.user);
+        const newStock = variant.stock + stockToAddNumber;
+
+        const updatedProduct = await productService.updateVariantStock(productId, variantId, newStock, req.user);
+
+        res.json(updatedProduct);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+}
