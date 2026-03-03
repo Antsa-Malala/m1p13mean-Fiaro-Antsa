@@ -187,6 +187,12 @@ exports.updateVariantStock = async (productId, variantId, newStock, user) => {
         throw new Error('Variant not found');
     }
 
+    let totalStock = 0;
+    for(const item of variant) {
+        totalStock += item.stock;
+    }
+
+    product.stock = totalStock;
     variant.stock = newStock;
     return await product.save();
 };
