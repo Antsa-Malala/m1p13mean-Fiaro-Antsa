@@ -29,9 +29,11 @@ exports.createProduct = async (data) => {
 };
 
 exports.getProducts = async (filter = {}) => {
-    return await Product.find(filter)
+    const result = await Product.find(filter)
         .populate('shop')
         .populate('category');
+
+    return shuffleArray([...result]);
 };
 
 exports.getProductsMinima = async (filter = {}) => {
@@ -150,20 +152,14 @@ exports.deleteVariant = async (productId, variantId) => {
     return updatedProduct;
 };
 
-exports.getVariant = async (productId, variantId, user) => {
-    if (!Types.ObjectId.isValid(productId)) {
+exports.getVariant = async (productId, variantId) => {
+    if (!mongoose.Types.ObjectId.isValid(productId) || !mongoose.Types.ObjectId.isValid(variantId)) {
         throw new Error('Invalid product id');
     }
 
     const product = await Product.findById(productId);
     if (!product) {
         throw new Error('Product not found');
-    }
-
-    const isAdmin = user?.role === 'ADMIN';
-
-    if (!isAdmin && (product.shop._id.toString() !== user?.id)) {
-         throw new Error('You are not allowed to update this product variant');
     }
 
     const variant = product.variants.id(variantId);
@@ -175,7 +171,7 @@ exports.getVariant = async (productId, variantId, user) => {
 };
 
 exports.updateVariantStock = async (productId, variantId, newStock, user) => {
-    if (!Types.ObjectId.isValid(productId)) {
+    if (!mongoose.Types.ObjectId.isValid(productId) || !mongoose.Types.ObjectId.isValid(variantId))  {
         throw new Error('Invalid product id');
     }
 
@@ -186,11 +182,7 @@ exports.updateVariantStock = async (productId, variantId, newStock, user) => {
 
     const isAdmin = user?.role === 'ADMIN';
 
-    if (!isAdmin && (product.shop._id.toString() !== user?.id)) {
-        throw new Error('You are not allowed to update this product variant');
-    }
-
-    const variant = product.variants.find(v => v._id === variantId);
+    const variant = product.variants.id(variantId);
     if (!variant) {
         throw new Error('Variant not found');
     }
@@ -232,3 +224,13 @@ exports.getVariantsByProductsId = async (productId) => {
 
     return products.variants;
 };
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      
+      // échange des éléments
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }

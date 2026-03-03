@@ -1,6 +1,6 @@
 const movementStockService = require('../services/movementStockService');
 
-exports.createMovementStock = async (req, res) => {
+exports.addMovementStock = async (req, res) => {
     try {
         const addedMovementStock = await movementStockService.addStock({
             ...req.body

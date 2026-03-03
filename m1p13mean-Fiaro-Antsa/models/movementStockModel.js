@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const movementStockShema = new mongoose.Schema({
+const movementStockSchema = new mongoose.Schema({
     movementDate: { type: Date, required: true, default: Date.now },
     type: {
         type: String,
@@ -18,6 +18,6 @@ const movementStockShema = new mongoose.Schema({
     }
 });
 
-const MovementStock = mongoose.model('MovementStock', movementStockShema, 'MovementStocks');
+const MovementStock = mongoose.model('MovementStock', movementStockSchema, 'MovementStocks');
 
 module.exports = { MovementStock };

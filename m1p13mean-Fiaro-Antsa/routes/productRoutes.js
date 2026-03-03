@@ -16,4 +16,10 @@ router.delete("/variant/:productId/:variantId", authMiddleware, authorize(['ADMI
 router.delete('/:id', authMiddleware, authorize(['ADMIN','SHOP']), productController.deleteProduct);
 router.put('/:productId/variants/:variantId/stock', authMiddleware, authorize(['ADMIN','SHOP']), productController.updateVariantStock);
 
+router.get('/productsByShopId/:shopId', authMiddleware, authorize(['ADMIN','SHOP']), productController.getProductByShopId);
+router.get('/variantsByProductId/:productId', authMiddleware, authorize(['ADMIN','SHOP']), productController.getVariantsByProductId);
+router.post('/stockEntry/:productId/:variantId', authMiddleware, authorize(['ADMIN', 'SHOP']), productController.addVariantStock);
+
+router.post('/confirmCart', authMiddleware, authorize(['ADMIN', 'CUSTOMER']), productController.processCartConfirmation);
+
 module.exports = router;

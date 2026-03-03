@@ -17,7 +17,7 @@ exports.addStock = async (data) => {
         }
 
         const variant = product.variants.id(data.variant);
-        if(!variants) {
+        if(!variant) {
             throw new Error('Variant not found in this product');
         }
         
