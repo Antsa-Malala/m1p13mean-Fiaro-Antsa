@@ -155,3 +155,63 @@ exports.getMyBox = async (shopId) => {
         throw err;
     }
 };
+
+exports.getCustomerCount = async () => {
+    try {
+        const result = await User.countDocuments({
+            role: 'CUSTOMER'
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error getting customer count : ", error);
+        throw error;
+    }
+};
+exports.getCustomerCountThisMonth = async () => {
+    try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const result = await User.countDocuments({
+            role: 'CUSTOMER',
+            createdAt: { $gte: startOfMonth }
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error getting customer count this month : ", error);
+        throw error;
+    }
+}
+
+exports.getShopCount = async () => {
+    try {
+        const result = await User.countDocuments({
+            role: 'SHOP'
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error getting shop count : ", error);
+        throw error;
+    }
+};
+exports.getShopCountThisMonth = async () => {
+    try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const result = await User.countDocuments({
+            role: 'SHOP',
+            createdAt: { $gte: startOfMonth }
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error getting shop count this month : ", error);
+        throw error;
+    }
+}

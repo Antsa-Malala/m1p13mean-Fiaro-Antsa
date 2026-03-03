@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Purchase, PurchaseCustomer } = require('../models/purchaseCustomerModel');
+const { PurchaseCustomer } = require('../models/purchaseCustomerModel');
 const { User } = require('../models/userModel');
 const { Product } = require('../models/productModel');
 
@@ -51,7 +51,80 @@ exports.addPurchaseCustomer = async (data) => {
 
 
     } catch (error) {
-        console.log("Error creating purchaseCustomer");
+        console.error("Error creating purchaseCustomer : ", error);
         throw error;
+    }
+};
+
+exports.getAllOrders = async () => {
+    try {
+        const results = await PurchaseCustomer.countDocuments();
+        return results;
+    } catch (error) {
+        console.error("Error getting all orders : ", error);
+        throw error;
+    }
+};
+exports.getOrdersThisMonth = async () => {
+    try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const results = await PurchaseCustomer.countDocuments({
+            purchaseDate: { $gte: startOfMonth }
+        });
+
+        return results
+    } catch (error) {
+        console.error("Error getting all orders this month : ", error);
+        throw error;
+    }
+}
+
+exports.getIcome = async () => {
+    try {
+        const icome = await PurchaseCustomer.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalIcome: { $sum: "$totalPriceGlobal" }
+                }
+            }
+        ]);
+
+        const result = icome[0]?.totalIcome || 0;
+        console.log("Total Icome : " + result);
+
+        return result;
+    } catch (error) {
+        console.error("Error getting Icome : ",error);
+        throw error;
+    }
+};
+exports.getIcomeThisMonth = async () => {
+    try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const income = await PurchaseCustomer.aggregate([
+            {
+                $match: {
+                    purchaseDate: { $gte: startOfMonth }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalIcome: { $sum: "$totalPriceGlobal" }
+                }
+            }
+        ]);
+
+        const result = income[0]?.totalIcome || 0;
+        return result;
+    } catch (error) {
+        console.error("Error getting icome this month : ", error);
     }
 }

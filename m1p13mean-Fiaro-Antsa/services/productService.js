@@ -225,12 +225,36 @@ exports.getVariantsByProductsId = async (productId) => {
     return products.variants;
 };
 
+exports.getAllProductsCount = async () => {
+    try {
+        const result = await Product.countDocuments();
+
+        return result;
+    } catch (error) {
+        console.error("Error getting all products count : ", error);
+    }
+}
+exports.getAllProductsCountThisMonth = async () => {
+    try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const result = await Product.countDocuments({
+            createdAt: { $gte: startOfMonth }
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error getting all products count this month : ", error);
+    }
+}
+
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       
-      // échange des éléments
       [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
-  }
+}
