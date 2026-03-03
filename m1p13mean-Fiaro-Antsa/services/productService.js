@@ -180,19 +180,14 @@ exports.updateVariantStock = async (productId, variantId, newStock, user) => {
         throw new Error('Product not found');
     }
 
-    const isAdmin = user?.role === 'ADMIN';
-
     const variant = product.variants.id(variantId);
     if (!variant) {
         throw new Error('Variant not found');
     }
 
-    let totalStock = 0;
-    for(const item of product.variants) {
-        totalStock += item.stock;
-    }
+    const differenceStock = newStock - variant.stock;
+    product.stock += differenceStock;
 
-    product.stock = totalStock;
     variant.stock = newStock;
     return await product.save();
 };
