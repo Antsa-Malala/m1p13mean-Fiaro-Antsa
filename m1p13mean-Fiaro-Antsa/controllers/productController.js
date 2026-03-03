@@ -332,7 +332,6 @@ exports.processCartConfirmation = async (req, res) => {
             await movementStockService.addStock(movement);
         }
 
-        console.log("TAY " + req.user.id);
         let purchase = new PurchaseCustomer({
             customer: req.user.id,
             detailsPurchase: purchaseList,
