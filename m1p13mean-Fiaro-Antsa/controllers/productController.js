@@ -254,6 +254,14 @@ exports.addVariantStock = async (req, res) => {
 
         const updatedProduct = await productService.updateVariantStock(productId, variantId, newStock, req.user);
 
+        const movement = new MovementStock({
+            type: 'ENTRY',
+            quantity: stockToAddNumber,
+            product: productId,
+            variant: variantId
+        });
+        await movementStockService.addStock(movement);
+
         res.json(updatedProduct);
     } catch (error) {
         res.status(400).json({ message: error.message });

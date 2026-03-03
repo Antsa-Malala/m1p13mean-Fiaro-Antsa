@@ -88,3 +88,39 @@ exports.deleteBox = async (id) => {
         throw err;
     }
 };
+
+exports.getBoxOccupiedCount = async () => {
+    try {
+        const result = await Box.countDocuments({
+            status: 'OCCUPIED'
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error getting box occupied count : ", error);
+    }
+};
+
+exports.getBoxAvailableCount = async () => {
+    try {
+        const result = await Box.countDocuments({
+            status: 'AVAILABLE'
+        });
+        
+        return result;
+    } catch (error) {
+        console.error("Error getting box available count : ",error);
+    }
+};
+
+exports.getBoxMaintenanceCount = async () => {
+    try {
+        const result = await Box.countDocuments({
+            status: 'MAINTENANCE'
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error getting box in maintenance count : ",error);
+    }
+};
