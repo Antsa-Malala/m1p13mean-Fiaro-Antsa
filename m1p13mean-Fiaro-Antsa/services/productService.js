@@ -3,9 +3,19 @@ const mongoose = require('mongoose');
 
 exports.createProduct = async (data) => {
     try {
-        const existing = await Product.findOne({ name: data.name, user: data.shop });
+        const existing = await Product.findOne({ name: data.name, shop: data.shop });
         if (existing) {
             throw new Error(`Product with name ${data.name} already exists in your shop`);
+        }
+
+        if (!data.variants || data.variants.length === 0) {
+            data.variants = [{
+                size: "",
+                color: "",
+                price: data.price || 0,
+                stock: data.stock || 0,
+                image: data.image || "",
+            }];
         }
 
         const product = await Product.create(data);
@@ -13,15 +23,17 @@ exports.createProduct = async (data) => {
         return product;
 
     } catch (err) {
-        console.error("Error creating product:", err);
+        console.error("Error creating product:", err.message);
         throw err;
     }
 };
 
 exports.getProducts = async (filter = {}) => {
-    return await Product.find(filter)
+    const result = await Product.find(filter)
         .populate('shop')
         .populate('category');
+
+    return shuffleArray([...result]);
 };
 
 exports.getProductsMinima = async (filter = {}) => {
@@ -140,8 +152,26 @@ exports.deleteVariant = async (productId, variantId) => {
     return updatedProduct;
 };
 
+exports.getVariant = async (productId, variantId) => {
+    if (!mongoose.Types.ObjectId.isValid(productId) || !mongoose.Types.ObjectId.isValid(variantId)) {
+        throw new Error('Invalid product id');
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+        throw new Error('Product not found');
+    }
+
+    const variant = product.variants.id(variantId);
+    if (!variant) {
+        throw new Error('Variant not found');
+    }
+
+    return variant;
+};
+
 exports.updateVariantStock = async (productId, variantId, newStock, user) => {
-    if (!Types.ObjectId.isValid(productId)) {
+    if (!mongoose.Types.ObjectId.isValid(productId) || !mongoose.Types.ObjectId.isValid(variantId))  {
         throw new Error('Invalid product id');
     }
 
@@ -152,11 +182,7 @@ exports.updateVariantStock = async (productId, variantId, newStock, user) => {
 
     const isAdmin = user?.role === 'ADMIN';
 
-   if (!isAdmin && (product.shop._id.toString() !== user?.id)) {
-        throw new Error('You are not allowed to update this product variant');
-    }
-
-    const variant = product.variants.find(v => v._id === variantId);
+    const variant = product.variants.id(variantId);
     if (!variant) {
         throw new Error('Variant not found');
     }
@@ -179,3 +205,32 @@ exports.getAvailableProducts = async (shopId, categoryId) => {
 
     return await this.getProducts(filter);
 };
+
+exports.getProductsByShopId = async (shopId) => {
+    const filter = {};
+    filter.shop = shopId;
+    const result = await this.getProductsMinima(filter);
+    if(!result) {
+        throw new Error('No products for your shop');
+    }
+
+    return result;
+};
+
+exports.getVariantsByProductsId = async (productId) => {
+    const products = await Product
+                            .findById(productId)
+                            .select('variants');
+
+    return products.variants;
+};
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      
+      // échange des éléments
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }

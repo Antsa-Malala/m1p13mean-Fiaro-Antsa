@@ -2,6 +2,10 @@ const cloudinary = require('../config/cloudinary');
 const fs = require('fs');
 const path = require('path');
 const productService = require('../services/productService');
+const movementStockService = require('../services/movementStockService');
+const { MovementStock } = require('../models/movementStockModel');
+const purchaseService = require('../services/purchaseCustomerService');
+const { PurchaseCustomer } = require('../models/purchaseCustomerModel');
 
 const uploadPath = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadPath)) {
@@ -232,6 +236,105 @@ exports.deleteVariant = async (req, res) => {
         res.json(updatedProduct);
 
     } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.addVariantStock = async (req, res) => {
+    try {
+        const { productId, variantId } = req.params;
+        const { stockToAdd } = req.body;
+        const stockToAddNumber = Number(stockToAdd);
+        if(isNaN(stockToAddNumber) || stockToAddNumber < 0 ) {
+            throw new Error('Invalid stock value');
+        }
+
+        const variant = await productService.getVariant(productId, variantId);
+        const newStock = variant.stock + stockToAddNumber;
+
+        const updatedProduct = await productService.updateVariantStock(productId, variantId, newStock, req.user);
+
+        res.json(updatedProduct);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.getProductByShopId = async (req, res) => {
+    try {
+        const { shopId } = req.params;
+        const products = await productService.getProductsByShopId(shopId);
+
+        res.json(products);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.getVariantsByProductId = async (req, res) => {
+    try {
+        const productId = req.params;
+        const variants = await productService.getVariantsByProductsId(productId);
+
+        res.json(variants);
+    } catch(error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.processCartConfirmation = async (req, res) => {
+    try {
+        const { purchaseList } = req.body;
+
+        if (!Array.isArray(purchaseList) || purchaseList.length === 0) {
+            throw new Error('Purchase list is required');
+        }
+
+        for (const item of purchaseList) {
+            const { productId, variantId, quantity } = item;
+
+            if (!productId || !variantId || !quantity) {
+                throw new Error('Invalid purchase item');
+            }
+
+            if (quantity <= 0) {
+                throw new Error('Quantity must be greater than 0');
+            }
+
+            const variant = await productService.getVariant(productId, variantId);
+            if(variant.stock < quantity) {
+                throw new Error('Insufficient quantity');
+            }
+        }
+
+        for (const item of purchaseList) {
+            const { productId, variantId, quantity } = item;
+
+            const variant = await productService.getVariant(productId, variantId);
+            const newStock = variant.stock - quantity;
+            
+            productService.updateVariantStock(productId, variantId, newStock, req.user);
+
+            const movement = new MovementStock({
+                type: 'RELEASE',
+                quantity: quantity,
+                product: productId,
+                variant: variantId
+            });
+            await movementStockService.addStock(movement);
+        }
+
+        console.log("TAY " + req.user.id);
+        let purchase = new PurchaseCustomer({
+            customer: req.user.id,
+            detailsPurchase: purchaseList,
+            totalPriceGobal: 0
+        });
+        await purchaseService.addPurchaseCustomer(purchase);
+
+        res.status(201).json({ message: purchase });     
+
+    } catch(error) {
         res.status(400).json({ message: error.message });
     }
 };
