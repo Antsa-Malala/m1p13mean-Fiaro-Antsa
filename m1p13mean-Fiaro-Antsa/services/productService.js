@@ -188,7 +188,7 @@ exports.updateVariantStock = async (productId, variantId, newStock, user) => {
     }
 
     let totalStock = 0;
-    for(const item of variant) {
+    for(const item of product.variants) {
         totalStock += item.stock;
     }
 
