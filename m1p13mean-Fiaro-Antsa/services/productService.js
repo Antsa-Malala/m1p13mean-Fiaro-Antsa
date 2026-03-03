@@ -210,7 +210,7 @@ exports.getAvailableProducts = async (shopId, categoryId) => {
 exports.getProductsByShopId = async (shopId) => {
     const filter = {};
     filter.shop = shopId;
-    const result = await this.getProductsMinima(filter);
+    const result = await this.getProducts(filter);
     if(!result) {
         throw new Error('No products for your shop');
     }
